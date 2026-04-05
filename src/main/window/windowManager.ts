@@ -5,6 +5,11 @@ import type { WindowMode } from '../../shared/todo';
 const FOREVER_BLUR_OPACITY = 0.3;
 const DESKTOP_BLUR_OPACITY = 0.2;
 const FOCUS_OPACITY = 1;
+const WINDOW_MARGIN = 24;
+const DEFAULT_WINDOW_WIDTH = 380;
+const DEFAULT_WINDOW_HEIGHT = 620;
+const MIN_WINDOW_WIDTH_FLOOR = 120;
+const MIN_WINDOW_HEIGHT_FLOOR = 100;
 
 export class WindowManager {
   private mainWindow: BrowserWindow | null = null;
@@ -15,13 +20,14 @@ export class WindowManager {
   constructor(private readonly preloadPath: string, private readonly iconPath: string) {}
 
   createWindow(): BrowserWindow {
-    const { x, y } = this.getDefaultPosition();
+    const { width, height, minWidth, minHeight } = this.resolveWindowSize();
+    const { x, y } = this.getDefaultPosition(width);
 
     this.mainWindow = new BrowserWindow({
-      width: 440,
-      height: 700,
-      minWidth: 360,
-      minHeight: 500,
+      width,
+      height,
+      minWidth,
+      minHeight,
       x,
       y,
       show: false,
@@ -131,6 +137,7 @@ export class WindowManager {
   setClickThrough(enabled: boolean): boolean {
     this.clickThroughEnabled = enabled;
     this.mainWindow?.setIgnoreMouseEvents(enabled, { forward: enabled });
+    this.mainWindow?.webContents.send('clickThroughChanged', this.clickThroughEnabled);
     return this.clickThroughEnabled;
   }
 
@@ -138,10 +145,25 @@ export class WindowManager {
     return this.clickThroughEnabled;
   }
 
-  private getDefaultPosition(): { x: number; y: number } {
+  private resolveWindowSize(): { width: number; height: number; minWidth: number; minHeight: number } {
     const bounds = screen.getPrimaryDisplay().workArea;
-    const x = bounds.x + bounds.width - 440 - 24;
-    const y = bounds.y + 24;
+    const minWidth = Math.max(MIN_WINDOW_WIDTH_FLOOR, Math.floor(bounds.width / 5));
+    const minHeight = Math.max(MIN_WINDOW_HEIGHT_FLOOR, Math.floor(bounds.height / 5));
+    const maxWidth = Math.max(minWidth, bounds.width - WINDOW_MARGIN * 2);
+    const maxHeight = Math.max(minHeight, bounds.height - WINDOW_MARGIN * 2);
+
+    return {
+      width: Math.min(DEFAULT_WINDOW_WIDTH, maxWidth),
+      height: Math.min(DEFAULT_WINDOW_HEIGHT, maxHeight),
+      minWidth,
+      minHeight
+    };
+  }
+
+  private getDefaultPosition(width: number): { x: number; y: number } {
+    const bounds = screen.getPrimaryDisplay().workArea;
+    const x = bounds.x + bounds.width - width - WINDOW_MARGIN;
+    const y = bounds.y + WINDOW_MARGIN;
 
     return { x, y };
   }

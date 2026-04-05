@@ -29,6 +29,18 @@ const api: DesktopApi = {
     return () => {
       ipcRenderer.removeListener('windowModeChanged', listener);
     };
+  },
+
+  onClickThroughChanged: (callback: (enabled: boolean) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, enabled: boolean): void => {
+      callback(enabled);
+    };
+
+    ipcRenderer.on('clickThroughChanged', listener);
+
+    return () => {
+      ipcRenderer.removeListener('clickThroughChanged', listener);
+    };
   }
 };
 

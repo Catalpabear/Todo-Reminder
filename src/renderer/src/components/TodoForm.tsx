@@ -17,6 +17,12 @@ function parseDeadline(input: string): number {
   return new Date(input).getTime();
 }
 
+function toLocalDateTimeInputValue(timestamp: number): string {
+  const target = new Date(timestamp);
+  const shifted = new Date(target.getTime() - target.getTimezoneOffset() * 60 * 1000);
+  return shifted.toISOString().slice(0, 16);
+}
+
 export default function TodoForm({
   submitLabel,
   initialTitle,
@@ -30,6 +36,8 @@ export default function TodoForm({
   const [description, setDescription] = useState(initialDescription);
   const [deadline, setDeadline] = useState(initialDeadline);
   const [error, setError] = useState<string | null>(null);
+  const minDeadline = useMemo(() => toLocalDateTimeInputValue(Date.now()), []);
+  const parsedDeadline = useMemo(() => parseDeadline(deadline), [deadline]);
 
   useEffect(() => {
     setTitle(initialTitle);
@@ -38,7 +46,36 @@ export default function TodoForm({
     setError(null);
   }, [initialTitle, initialDescription, initialDeadline]);
 
-  const isDisabled = useMemo(() => loading || !title.trim() || !deadline, [loading, title, deadline]);
+  useEffect(() => {
+    if (!deadline) {
+      setError(null);
+      return;
+    }
+
+    if (Number.isNaN(parsedDeadline)) {
+      setError('请输入有效的截止时间');
+      return;
+    }
+
+    if (parsedDeadline < Date.now()) {
+      setError('计划日期不能早于当前时间');
+      return;
+    }
+
+    setError(null);
+  }, [deadline, parsedDeadline]);
+
+  const isDisabled = useMemo(() => {
+    if (loading || !title.trim() || !deadline) {
+      return true;
+    }
+
+    if (Number.isNaN(parsedDeadline)) {
+      return true;
+    }
+
+    return parsedDeadline < Date.now();
+  }, [loading, title, deadline, parsedDeadline]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -46,6 +83,11 @@ export default function TodoForm({
 
     if (Number.isNaN(timestamp)) {
       setError('请输入有效的截止时间');
+      return;
+    }
+
+    if (timestamp < Date.now()) {
+      setError('计划日期不能早于当前时间');
       return;
     }
 
@@ -93,6 +135,7 @@ export default function TodoForm({
           type="datetime-local"
           value={deadline}
           onChange={(event) => setDeadline(event.target.value)}
+          min={minDeadline}
           required
         />
       </label>

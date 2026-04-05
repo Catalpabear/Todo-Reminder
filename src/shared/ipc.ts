@@ -17,4 +17,5 @@ export interface DesktopApi {
   closeWindow: () => Promise<void>;
 
   onWindowModeChanged: (callback: (mode: WindowMode) => void) => () => void;
+  onClickThroughChanged: (callback: (enabled: boolean) => void) => () => void;
 }

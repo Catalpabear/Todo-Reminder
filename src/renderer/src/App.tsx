@@ -41,12 +41,16 @@ export default function App(): JSX.Element {
     void window.api.getWindowMode().then(setMode);
     void window.api.getClickThrough().then(setClickThrough);
 
-    const unsubscribe = window.api.onWindowModeChanged((nextMode) => {
+    const unsubscribeWindowMode = window.api.onWindowModeChanged((nextMode) => {
       setMode(nextMode);
+    });
+    const unsubscribeClickThrough = window.api.onClickThroughChanged((enabled) => {
+      setClickThrough(enabled);
     });
 
     return () => {
-      unsubscribe();
+      unsubscribeWindowMode();
+      unsubscribeClickThrough();
     };
   }, [loadTodos]);
 
@@ -125,8 +129,8 @@ export default function App(): JSX.Element {
     setMode(result);
   };
 
-  const toggleClickThrough = async (): Promise<void> => {
-    const result = await window.api.setClickThrough(!clickThrough);
+  const toggleClickThrough = async (allowInteraction: boolean): Promise<void> => {
+    const result = await window.api.setClickThrough(!allowInteraction);
     setClickThrough(result);
   };
 
@@ -172,8 +176,12 @@ export default function App(): JSX.Element {
           </div>
 
           <label className="click-toggle">
-            <input type="checkbox" checked={clickThrough} onChange={() => void toggleClickThrough()} />
-            Click-through
+            <input
+              type="checkbox"
+              checked={!clickThrough}
+              onChange={(event) => void toggleClickThrough(event.target.checked)}
+            />
+            允许点击窗口
           </label>
         </section>
 
