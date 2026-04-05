@@ -156,47 +156,49 @@ export default function App(): JSX.Element {
             </button>
           </div>
         </header>
+        <details>
+          <summary>点击展开</summary>
+          <section className="toolbar no-drag">
+            <div className="mode-switch">
+              <button
+                type="button"
+                className={mode === 'forever' ? 'active' : ''}
+                onClick={() => void switchMode('forever')}
+              >
+                Forever Mode
+              </button>
+              <button
+                type="button"
+                className={mode === 'desktop' ? 'active' : ''}
+                onClick={() => void switchMode('desktop')}
+              >
+                Desktop Mode
+              </button>
+            </div>
 
-        <section className="toolbar no-drag">
-          <div className="mode-switch">
-            <button
-              type="button"
-              className={mode === 'forever' ? 'active' : ''}
-              onClick={() => void switchMode('forever')}
-            >
-              Forever Mode
-            </button>
-            <button
-              type="button"
-              className={mode === 'desktop' ? 'active' : ''}
-              onClick={() => void switchMode('desktop')}
-            >
-              Desktop Mode
-            </button>
-          </div>
+            <label className="click-toggle">
+              <input
+                type="checkbox"
+                checked={!clickThrough}
+                onChange={(event) => void toggleClickThrough(event.target.checked)}
+              />
+              允许点击窗口
+            </label>
+          </section>
 
-          <label className="click-toggle">
-            <input
-              type="checkbox"
-              checked={!clickThrough}
-              onChange={(event) => void toggleClickThrough(event.target.checked)}
+          <section className="panel no-drag">
+            <h2>{editing ? '编辑 TODO' : '新建 TODO'}</h2>
+            <TodoForm
+              submitLabel={editing ? '保存修改' : '创建任务'}
+              initialTitle={editing ? editingForm.title : ''}
+              initialDescription={editing ? editingForm.description : ''}
+              initialDeadline={editing ? editingForm.deadline : ''}
+              onSubmit={editing ? handleUpdate : handleCreate}
+              onCancelEdit={editing ? cancelEdit : undefined}
+              loading={loading}
             />
-            允许点击窗口
-          </label>
-        </section>
-
-        <section className="panel no-drag">
-          <h2>{editing ? '编辑 TODO' : '新建 TODO'}</h2>
-          <TodoForm
-            submitLabel={editing ? '保存修改' : '创建任务'}
-            initialTitle={editing ? editingForm.title : ''}
-            initialDescription={editing ? editingForm.description : ''}
-            initialDeadline={editing ? editingForm.deadline : ''}
-            onSubmit={editing ? handleUpdate : handleCreate}
-            onCancelEdit={editing ? cancelEdit : undefined}
-            loading={loading}
-          />
-        </section>
+          </section>
+        </details>
 
         <section className="panel list-panel no-drag">
           <div className="panel-header">
@@ -220,10 +222,10 @@ export default function App(): JSX.Element {
           </div>
         </section>
 
-        <footer className="footer no-drag">
+        {/* <footer className="footer no-drag">
           <span>通知规则：截止前 5 小时触发（每分钟检查）</span>
           <span>快捷键：Ctrl/Cmd + Shift + X 切换穿透</span>
-        </footer>
+        </footer> */}
       </div>
     </div>
   );
