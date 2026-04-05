@@ -1,8 +1,8 @@
-# electron-app
+# Todo-Reminder 
 
-An Electron application with React
+Buiit by ReactJS electron sqlite3
 
-## Recommended IDE Setup
+## IDE Setup
 
 - [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
