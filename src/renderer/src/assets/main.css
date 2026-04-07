@@ -200,12 +200,14 @@ textarea {
 
 button {
   cursor: pointer;
+  width: 100%;
   transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
 }
 
 button:hover {
   border-color: rgba(255, 255, 255, 0.28);
   transform: translateY(-1px);
+  border-color: rgba(68, 176, 255, 0.8);
 }
 
 button:active {
@@ -219,14 +221,17 @@ button.active {
 
 button.secondary {
   color: #b8c2d6;
+  width: 20%;
 }
 
 button.ghost {
   color: #93beff;
+  width: 60%;
 }
 
 button.danger {
   color: var(--danger);
+  width: 20%;
 }
 
 button:disabled {

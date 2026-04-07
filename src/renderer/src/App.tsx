@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 
 import type { Todo, WindowMode } from '../../shared/todo';
 
@@ -117,11 +117,14 @@ export default function App(): JSX.Element {
   const handleEdit = (todo: Todo): void => {
     setEditingTodoId(todo.id);
     setEditingForm(mapTodoToInitialForm(todo));
+    open();
+    handleScrollToTarget();
   };
 
   const cancelEdit = (): void => {
     setEditingTodoId(null);
     setEditingForm(defaultForm);
+    close();
   };
 
   const switchMode = async (nextMode: WindowMode): Promise<void> => {
@@ -139,6 +142,12 @@ export default function App(): JSX.Element {
     [editingTodoId, todos]
   );
 
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+  const open = () => { if (detailsRef.current) { detailsRef.current.open = true } }
+  const close = () => { if (detailsRef.current) { detailsRef.current.open = false } }
+  const handleScrollToTarget = () => {
+    detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   return (
     <div className="window-root">
       <div className="app-shell">
@@ -148,17 +157,12 @@ export default function App(): JSX.Element {
             <h1>任务提醒</h1>
           </div>
           <div className="window-buttons no-drag">
-            <button type="button" className="ghost" onClick={() => window.api.minimizeWindow()}>
+            {/* <button type="button" className="ghost" onClick={() => window.api.minimizeWindow()}>
               最小化
             </button>
             <button type="button" className="danger" onClick={() => window.api.closeWindow()}>
               关闭
-            </button>
-          </div>
-        </header>
-        <details>
-          <summary>点击展开</summary>
-          <section className="toolbar no-drag">
+            </button> */}
             <div className="mode-switch">
               <button
                 type="button"
@@ -175,7 +179,26 @@ export default function App(): JSX.Element {
                 Desktop Mode
               </button>
             </div>
-
+          </div>
+        </header>
+        <section className="toolbar no-drag">
+          {/* <div className="mode-switch">
+            <button
+              type="button"
+              className={mode === 'forever' ? 'active' : ''}
+              onClick={() => void switchMode('forever')}
+            >
+              Forever Mode
+            </button>
+            <button
+              type="button"
+              className={mode === 'desktop' ? 'active' : ''}
+              onClick={() => void switchMode('desktop')}
+            >
+              Desktop Mode
+            </button>
+          </div> */}
+          <div style={{display:"flex",gap:'100px',height:'auto'}}>
             <label className="click-toggle">
               <input
                 type="checkbox"
@@ -184,8 +207,14 @@ export default function App(): JSX.Element {
               />
               允许点击窗口
             </label>
-          </section>
+            <label>
+              <button style={{height:'100%'}} onClick={() => window.api.closeWindow()}>Exit</button>
+            </label>
+          </div>
+        </section>
 
+        <details ref={detailsRef}>
+          <summary>点击展开</summary>
           <section className="panel no-drag">
             <h2>{editing ? '编辑 TODO' : '新建 TODO'}</h2>
             <TodoForm
@@ -196,6 +225,7 @@ export default function App(): JSX.Element {
               onSubmit={editing ? handleUpdate : handleCreate}
               onCancelEdit={editing ? cancelEdit : undefined}
               loading={loading}
+              close={close}
             />
           </section>
         </details>

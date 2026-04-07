@@ -1,4 +1,4 @@
-﻿import { app, BrowserWindow, globalShortcut, shell } from 'electron';
+﻿import { app, BrowserWindow, globalShortcut, shell ,Tray, Menu} from 'electron';
 import { join } from 'node:path';
 
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
@@ -8,11 +8,12 @@ import { registerIpcHandlers } from './ipc/registerIpcHandlers';
 import { ReminderScheduler } from './scheduler/reminderScheduler';
 import { WindowManager } from './window/windowManager';
 
-import icon from '../../resources/icon.png?asset';
+import icon from '../../resources/logo.png?asset';
 
 let repository: TodoRepository | null = null;
 let scheduler: ReminderScheduler | null = null;
 let windowManager: WindowManager | null = null;
+let tray: Tray | null = null;
 
 function createMainWindow(): BrowserWindow {
   if (!windowManager) {
@@ -34,6 +35,30 @@ function createMainWindow(): BrowserWindow {
   return mainWindow;
 }
 
+function createTray() {
+  const trayIcon = icon // 你已经有 icon 资源 👍
+
+  tray = new Tray(trayIcon)
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示窗口',
+      click: () => windowManager?.showAndFocus()
+    },
+    {
+      label: '退出',
+      click: () => app.quit()
+    }
+  ])
+
+  tray.setToolTip('TODO Reminder')
+  tray.setContextMenu(contextMenu)
+
+  tray.on('click', () => {
+    windowManager?.showAndFocus()
+  })
+}
+
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.todo.reminder.desktop');
 
@@ -53,6 +78,7 @@ app.whenReady().then(() => {
   scheduler.start();
 
   createMainWindow();
+  createTray();
 
   globalShortcut.register('CommandOrControl+Shift+X', () => {
     if (!windowManager) {

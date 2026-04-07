@@ -11,6 +11,7 @@ type TodoFormProps = {
   onSubmit: (payload: { title: string; description: string; deadline: number }) => Promise<void>;
   onCancelEdit?: () => void;
   loading?: boolean;
+  close:()=>void;
 };
 
 function parseDeadline(input: string): number {
@@ -30,7 +31,8 @@ export default function TodoForm({
   initialDeadline,
   onSubmit,
   onCancelEdit,
-  loading
+  loading,
+  close
 }: TodoFormProps): JSX.Element {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
@@ -103,6 +105,7 @@ export default function TodoForm({
       setDescription('');
       setDeadline('');
     }
+    close();
   };
 
   return (
