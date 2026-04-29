@@ -11,7 +11,7 @@ type TodoFormProps = {
   onSubmit: (payload: { title: string; description: string; deadline: number }) => Promise<void>;
   onCancelEdit?: () => void;
   loading?: boolean;
-  close:()=>void;
+  close: () => void;
 };
 
 function parseDeadline(input: string): number {
@@ -38,13 +38,13 @@ export default function TodoForm({
   const [description, setDescription] = useState(initialDescription);
   const [deadline, setDeadline] = useState(initialDeadline);
   const [error, setError] = useState<string | null>(null);
-  const minDeadline = useMemo(() => toLocalDateTimeInputValue(Date.now()), []);
+  const minDeadline = useMemo(() => toLocalDateTimeInputValue(Date.now() + 1 * 60 * 60 * 1000), []);
   const parsedDeadline = useMemo(() => parseDeadline(deadline), [deadline]);
 
   useEffect(() => {
     setTitle(initialTitle);
     setDescription(initialDescription);
-    setDeadline(initialDeadline);
+    setDeadline(minDeadline);
     setError(null);
   }, [initialTitle, initialDescription, initialDeadline]);
 
