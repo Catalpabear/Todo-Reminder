@@ -3,12 +3,19 @@ import { join } from 'node:path';
 
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
 
+import type { WindowMode } from '../shared/todo';
 import { TodoRepository } from './database/todoRepository';
 import { registerIpcHandlers } from './ipc/registerIpcHandlers';
 import { ReminderScheduler } from './scheduler/reminderScheduler';
 import { WindowManager } from './window/windowManager';
 
 import icon from '../../resources/logo.png?asset';
+
+const POMODORO_WIDTH = 330;
+const POMODORO_HEIGHT = 310;
+const FOREVER_BLUR_OPACITY = 0.3;
+const DESKTOP_BLUR_OPACITY = 0.2;
+const FOCUS_OPACITY = 1;
 
 let repository: TodoRepository | null = null;
 let scheduler: ReminderScheduler | null = null;
@@ -23,6 +30,24 @@ function loadRendererWindow(window: BrowserWindow, hash?: string): void {
   } else {
     window.loadFile(join(__dirname, '../renderer/index.html'), hash ? { hash } : undefined);
   }
+}
+
+function applyPomodoroMode(mode: WindowMode): void {
+  if (!pomodoroWindow || pomodoroWindow.isDestroyed()) {
+    return;
+  }
+
+  if (mode === 'forever') {
+    pomodoroWindow.setAlwaysOnTop(true, 'screen-saver');
+    if (pomodoroWindow.isMinimized()) {
+      pomodoroWindow.restore();
+    }
+    pomodoroWindow.setOpacity(pomodoroWindow.isFocused() ? FOCUS_OPACITY : FOREVER_BLUR_OPACITY);
+    return;
+  }
+
+  pomodoroWindow.setAlwaysOnTop(false);
+  pomodoroWindow.setOpacity(pomodoroWindow.isFocused() ? FOCUS_OPACITY : DESKTOP_BLUR_OPACITY);
 }
 
 function createMainWindow(): BrowserWindow {
@@ -48,18 +73,23 @@ function createPomodoroWindow(): BrowserWindow {
 
     pomodoroWindow.show();
     pomodoroWindow.focus();
+    applyPomodoroMode(windowManager?.getMode() ?? 'forever');
     return pomodoroWindow;
   }
 
   pomodoroWindow = new BrowserWindow({
-    width: 460,
-    height: 640,
-    minWidth: 360,
-    minHeight: 520,
+    width: POMODORO_WIDTH,
+    height: POMODORO_HEIGHT,
+    minWidth: POMODORO_WIDTH,
+    minHeight: POMODORO_HEIGHT,
     show: false,
-    title: '番茄钟',
+    frame: false,
+    transparent: true,
+    hasShadow: true,
+    title: 'Pomodoro',
     autoHideMenuBar: true,
     resizable: true,
+    alwaysOnTop: windowManager?.getMode() !== 'desktop',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -71,6 +101,26 @@ function createPomodoroWindow(): BrowserWindow {
 
   pomodoroWindow.on('ready-to-show', () => {
     pomodoroWindow?.show();
+    applyPomodoroMode(windowManager?.getMode() ?? 'forever');
+  });
+
+  pomodoroWindow.on('focus', () => {
+    pomodoroWindow?.setOpacity(FOCUS_OPACITY);
+  });
+
+  pomodoroWindow.on('blur', () => {
+    const mode = windowManager?.getMode() ?? 'forever';
+    if (mode === 'forever') {
+      pomodoroWindow?.setOpacity(FOREVER_BLUR_OPACITY);
+      return;
+    }
+
+    pomodoroWindow?.setOpacity(DESKTOP_BLUR_OPACITY);
+    setTimeout(() => {
+      if (pomodoroWindow && !pomodoroWindow.isDestroyed() && mode === 'desktop' && !pomodoroWindow.isFocused()) {
+        pomodoroWindow.minimize();
+      }
+    }, 180);
   });
 
   pomodoroWindow.on('closed', () => {
@@ -123,7 +173,8 @@ app.whenReady().then(() => {
   windowManager = new WindowManager(join(__dirname, '../preload/index.js'), icon);
 
   registerIpcHandlers(repository, windowManager, {
-    openPomodoroWindow: createPomodoroWindow
+    openPomodoroWindow: createPomodoroWindow,
+    onWindowModeChanged: applyPomodoroMode
   });
 
   scheduler = new ReminderScheduler(repository, () => {

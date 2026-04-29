@@ -84,7 +84,7 @@ h2 {
 
 .toolbar {
   justify-content: space-between;
-  padding: 10px 16px;
+  padding: 8px 1px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -95,9 +95,9 @@ h2 {
 .click-toggle {
   display: flex;
   align-items: center;
-  gap: 6px;
+  /* gap: 6px; */
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 11x;
 }
 
 .toolbar-actions {
@@ -105,14 +105,23 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
-.toolbar-button {
+.toolbar-actions .toolbar-button {
   width: auto;
-  min-width: 72px;
-  height: 34px;
+  min-width: 46px;
+  height: 30px;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+.toolbar-actions .click-toggle {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 11px;
 }
 
 .panel {
@@ -274,42 +283,40 @@ button:disabled {
 .pomodoro-root {
   width: 100%;
   height: 100%;
-  padding: 12px;
-  background: #10141c;
+  padding: 8px;
+  background: transparent;
   color: var(--text);
-  overflow: auto;
+  overflow: hidden;
 }
 
 .pomodoro-shell {
-  min-height: 100%;
+  position: relative;
+  height: 100%;
   display: grid;
+  grid-template-rows: auto auto auto;
   align-content: start;
-  gap: 14px;
-}
-
-.pomodoro-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 6px;
+  padding: 8px;
+  overflow: auto;
   background: linear-gradient(165deg, var(--bg), var(--bg-strong));
   border: 1px solid var(--border);
-  border-radius: 12px;
-}
-
-.pomodoro-header h1 {
-  margin: 2px 0 0;
+  border-radius: 18px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
 }
 
 .pomodoro-close {
+  justify-self: end;
   width: auto;
-  min-width: 68px;
+  min-width: 44px;
+  height: 26px;
+  padding: 4px 8px;
+  font-size: 11px;
 }
 
 .pomodoro-clock-card,
 .pomodoro-presets {
-  padding: 14px;
+  padding: 8px;
   background: rgba(255, 255, 255, 0.045);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -317,15 +324,15 @@ button:disabled {
 
 .pomodoro-time {
   text-align: center;
-  font-size: 42px;
+  font-size: 28px;
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: 0;
 }
 
 .pomodoro-progress {
-  height: 8px;
-  margin: 12px 0;
+  height: 6px;
+  margin: 7px 0 0;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 999px;
@@ -338,6 +345,18 @@ button:disabled {
   transform-origin: left center;
   background: linear-gradient(90deg, #44b0ff, #7ee0a7);
   transition: transform 180ms ease;
+}
+
+.pomodoro-clock-card .MuiTimeClock-root {
+  width: 100%;
+  height: 154px;
+  margin: -8px auto -18px;
+  overflow: hidden;
+}
+
+.pomodoro-clock-card .MuiClock-root {
+  transform: scale(0.68);
+  transform-origin: top center;
 }
 
 .pomodoro-clock-card .MuiClock-root,
@@ -365,28 +384,46 @@ button:disabled {
 .preset-save-row,
 .preset-item {
   display: flex;
-  gap: 10px;
+  gap: 6px;
 }
 
 .pomodoro-controls button,
 .preset-save-row button {
-  min-height: 38px;
+  min-height: 30px;
+}
+
+.pomodoro-controls button {
+  width: 50%;
+}
+
+.pomodoro-controls button.secondary {
+  width: 50%;
+}
+
+.pomodoro-presets {
+  font-size: 12px;
+}
+
+.pomodoro-presets summary {
+  cursor: pointer;
+  color: var(--text-muted);
 }
 
 .preset-save-row input {
   width: 100%;
+  min-width: 0;
 }
 
 .preset-save-row button,
 .preset-delete {
   width: auto;
-  min-width: 86px;
+  min-width: 48px;
 }
 
 .preset-list {
   display: grid;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .preset-item button:first-child {
@@ -418,15 +455,12 @@ button:disabled {
     flex-wrap: wrap;
   }
 
-  .toolbar-actions,
-  .pomodoro-controls,
   .preset-save-row,
   .preset-item {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .toolbar-button,
   .pomodoro-close,
   .preset-save-row button,
   .preset-delete {

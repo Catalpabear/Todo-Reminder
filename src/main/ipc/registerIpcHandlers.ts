@@ -7,6 +7,7 @@ import { WindowManager } from '../window/windowManager';
 
 type IpcActions = {
   openPomodoroWindow: () => void;
+  onWindowModeChanged?: (mode: WindowMode) => void;
 };
 
 export function registerIpcHandlers(
@@ -28,7 +29,11 @@ export function registerIpcHandlers(
   register<number>('deleteTodo', (_, id) => repository.deleteTodo(id));
   register<number>('markNotified', (_, id) => repository.markNotified(id));
 
-  register<WindowMode>('setWindowMode', (_, mode) => windowManager.setMode(mode));
+  register<WindowMode>('setWindowMode', (_, mode) => {
+    const nextMode = windowManager.setMode(mode);
+    actions.onWindowModeChanged?.(nextMode);
+    return nextMode;
+  });
   register<void>('getWindowMode', () => windowManager.getMode());
 
   register<boolean>('setClickThrough', (_, enabled) => windowManager.setClickThrough(enabled));

@@ -37,9 +37,10 @@ function formatRemaining(totalSeconds: number): string {
 }
 
 function minutesToClockValue(minutes: number): Dayjs {
-  const hours = Math.floor(minutes / 60);
-  const restMinutes = minutes % 60;
-  return dayjs().hour(hours).minute(restMinutes).second(0);
+  return dayjs()
+    .hour(Math.floor(minutes / 60))
+    .minute(minutes % 60)
+    .second(0);
 }
 
 function clockValueToMinutes(value: Dayjs | null): number {
@@ -47,8 +48,7 @@ function clockValueToMinutes(value: Dayjs | null): number {
     return DEFAULT_MINUTES;
   }
 
-  const nextMinutes = value.hour() * 60 + value.minute();
-  return Math.max(1, nextMinutes);
+  return Math.max(1, value.hour() * 60 + value.minute());
 }
 
 export default function PomodoroWindow(): JSX.Element {
@@ -63,11 +63,9 @@ export default function PomodoroWindow(): JSX.Element {
   const progress = 1 - remainingSeconds / Math.max(1, durationMinutes * 60);
 
   useEffect(() => {
-    if (running) {
-      return;
+    if (!running) {
+      setRemainingSeconds(durationMinutes * 60);
     }
-
-    setRemainingSeconds(durationMinutes * 60);
   }, [durationMinutes, running]);
 
   useEffect(() => {
@@ -136,29 +134,16 @@ export default function PomodoroWindow(): JSX.Element {
     setActivePresetName(preset.name);
   };
 
-  const handlePresetDelete = (id: string): void => {
-    setPresets((current) => current.filter((preset) => preset.id !== id));
-  };
-
   const handleReset = (): void => {
     setRunning(false);
     setRemainingSeconds(durationMinutes * 60);
   };
 
   return (
-    <div className="pomodoro-root">
+    <div className="pomodoro-root drag-region">
       <main className="pomodoro-shell">
-        <header className="pomodoro-header">
-          <div>
-            <p className="small">Pomodoro Timer</p>
-            <h1>番茄钟</h1>
-          </div>
-          <button type="button" className="danger pomodoro-close" onClick={() => window.close()}>
-            关闭
-          </button>
-        </header>
 
-        <section className="pomodoro-clock-card">
+        <section className="pomodoro-clock-card no-drag">
           <div className="pomodoro-time">{formatRemaining(remainingSeconds)}</div>
           <div className="pomodoro-progress" aria-hidden="true">
             <span style={{ transform: `scaleX(${Math.min(1, Math.max(0, progress))})` }} />
@@ -169,26 +154,30 @@ export default function PomodoroWindow(): JSX.Element {
           </LocalizationProvider>
         </section>
 
-        <section className="pomodoro-controls">
+        <section className="pomodoro-controls no-drag">
           <button type="button" onClick={() => setRunning((current) => !current)}>
             {running ? '暂停' : '开始'}
           </button>
           <button type="button" className="secondary" onClick={handleReset}>
             重置
           </button>
+          <button type="button" onClick={() => window.close()}>
+            退出
+          </button>
         </section>
 
-        <section className="pomodoro-presets">
+        <details className="pomodoro-presets no-drag">
+          <summary>预设</summary>
           <div className="preset-save-row">
             <input
               type="text"
               value={presetName}
               onChange={(event) => setPresetName(event.target.value)}
-              placeholder="预设名称"
+              placeholder="名称"
               maxLength={24}
             />
             <button type="button" onClick={handlePresetSave}>
-              保存预设
+              保存
             </button>
           </div>
 
@@ -198,14 +187,18 @@ export default function PomodoroWindow(): JSX.Element {
                 <button type="button" onClick={() => handlePresetSelect(preset)}>
                   {preset.name} · {preset.minutes} 分钟
                 </button>
-                <button type="button" className="danger preset-delete" onClick={() => handlePresetDelete(preset.id)}>
+                <button
+                  type="button"
+                  className="danger preset-delete"
+                  onClick={() => setPresets((current) => current.filter((item) => item.id !== preset.id))}
+                >
                   删除
                 </button>
               </div>
             ))}
-            {presets.length === 0 ? <p className="empty-tip">暂无预设，可先保存当前倒计时。</p> : null}
+            {presets.length === 0 ? <p className="empty-tip">暂无预设。</p> : null}
           </div>
-        </section>
+        </details>
       </main>
     </div>
   );
