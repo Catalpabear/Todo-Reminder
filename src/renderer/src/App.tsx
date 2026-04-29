@@ -1,5 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 
+import type { JSX } from 'react';
+
 import type { Todo, WindowMode } from '../../shared/todo';
 
 import TodoForm, { mapTodoToInitialForm } from './components/TodoForm';
@@ -24,6 +26,7 @@ export default function App(): JSX.Element {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<WindowMode>('forever');
   const [clickThrough, setClickThrough] = useState(false);
+  const [autoLaunch, setAutoLaunch] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadTodos = useCallback(async (): Promise<void> => {
@@ -40,6 +43,7 @@ export default function App(): JSX.Element {
 
     void window.api.getWindowMode().then(setMode);
     void window.api.getClickThrough().then(setClickThrough);
+    void window.api.getAutoLaunch().then(setAutoLaunch);
 
     const unsubscribeWindowMode = window.api.onWindowModeChanged((nextMode) => {
       setMode(nextMode);
@@ -137,6 +141,11 @@ export default function App(): JSX.Element {
     setClickThrough(result);
   };
 
+  const toggleAutoLaunch = async (enabled: boolean): Promise<void> => {
+    const result = await window.api.setAutoLaunch(enabled);
+    setAutoLaunch(result);
+  };
+
   const editing = useMemo(
     () => (editingTodoId === null ? null : todos.find((todo) => todo.id === editingTodoId) ?? null),
     [editingTodoId, todos]
@@ -198,7 +207,7 @@ export default function App(): JSX.Element {
               Desktop Mode
             </button>
           </div> */}
-          <div style={{display:"flex",gap:'100px',height:'auto'}}>
+          <div className="toolbar-actions">
             <label className="click-toggle">
               <input
                 type="checkbox"
@@ -207,9 +216,20 @@ export default function App(): JSX.Element {
               />
               允许点击窗口
             </label>
-            <label>
-              <button style={{height:'100%'}} onClick={() => window.api.closeWindow()}>Exit</button>
+            <label className="click-toggle">
+              <input
+                type="checkbox"
+                checked={autoLaunch}
+                onChange={(event) => void toggleAutoLaunch(event.target.checked)}
+              />
+              开启开机自启动
             </label>
+            <button type="button" className="ghost toolbar-button" onClick={() => window.api.openPomodoroWindow()}>
+              番茄钟
+            </button>
+            <button type="button" className="danger toolbar-button" onClick={() => window.api.closeWindow()}>
+              Exit
+            </button>
           </div>
         </section>
 

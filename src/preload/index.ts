@@ -1,6 +1,6 @@
-﻿import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 
-import type { DesktopApi } from '../shared/ipc';
+import type { DesktopApi, PomodoroNotificationInput } from '../shared/ipc';
 import type { TodoInput, TodoUpdateInput, WindowMode } from '../shared/todo';
 
 const api: DesktopApi = {
@@ -18,6 +18,11 @@ const api: DesktopApi = {
 
   minimizeWindow: () => ipcRenderer.invoke('minimizeWindow'),
   closeWindow: () => ipcRenderer.invoke('closeWindow'),
+  openPomodoroWindow: () => ipcRenderer.invoke('openPomodoroWindow'),
+
+  getAutoLaunch: () => ipcRenderer.invoke('getAutoLaunch'),
+  setAutoLaunch: (enabled: boolean) => ipcRenderer.invoke('setAutoLaunch', enabled),
+  notifyPomodoroDone: (input: PomodoroNotificationInput) => ipcRenderer.invoke('notifyPomodoroDone', input),
 
   onWindowModeChanged: (callback: (mode: WindowMode) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, mode: WindowMode): void => {
@@ -47,6 +52,6 @@ const api: DesktopApi = {
 if (process.contextIsolated) {
   contextBridge.exposeInMainWorld('api', api);
 } else {
-  // @ts-expect-error runtime fallback for contextIsolation disabled.
+  // @ts-ignore runtime fallback for contextIsolation disabled.
   window.api = api;
 }

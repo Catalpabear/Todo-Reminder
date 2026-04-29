@@ -1,4 +1,9 @@
-﻿import type { Todo, TodoInput, TodoUpdateInput, WindowMode } from './todo';
+import type { Todo, TodoInput, TodoUpdateInput, WindowMode } from './todo';
+
+export interface PomodoroNotificationInput {
+  durationMinutes: number;
+  presetName?: string;
+}
 
 export interface DesktopApi {
   createTodo: (input: TodoInput) => Promise<Todo>;
@@ -15,6 +20,11 @@ export interface DesktopApi {
 
   minimizeWindow: () => Promise<void>;
   closeWindow: () => Promise<void>;
+  openPomodoroWindow: () => Promise<void>;
+
+  getAutoLaunch: () => Promise<boolean>;
+  setAutoLaunch: (enabled: boolean) => Promise<boolean>;
+  notifyPomodoroDone: (input: PomodoroNotificationInput) => Promise<void>;
 
   onWindowModeChanged: (callback: (mode: WindowMode) => void) => () => void;
   onClickThroughChanged: (callback: (enabled: boolean) => void) => () => void;

@@ -1,4 +1,4 @@
-﻿import { app, BrowserWindow, globalShortcut, shell ,Tray, Menu} from 'electron';
+import { app, BrowserWindow, globalShortcut, Menu, shell, Tray } from 'electron';
 import { join } from 'node:path';
 
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
@@ -14,6 +14,16 @@ let repository: TodoRepository | null = null;
 let scheduler: ReminderScheduler | null = null;
 let windowManager: WindowManager | null = null;
 let tray: Tray | null = null;
+let pomodoroWindow: BrowserWindow | null = null;
+
+function loadRendererWindow(window: BrowserWindow, hash?: string): void {
+  if (is.dev && process.env.ELECTRON_RENDERER_URL) {
+    const url = hash ? `${process.env.ELECTRON_RENDERER_URL}#${hash}` : process.env.ELECTRON_RENDERER_URL;
+    window.loadURL(url);
+  } else {
+    window.loadFile(join(__dirname, '../renderer/index.html'), hash ? { hash } : undefined);
+  }
+}
 
 function createMainWindow(): BrowserWindow {
   if (!windowManager) {
@@ -26,19 +36,58 @@ function createMainWindow(): BrowserWindow {
     return { action: 'deny' };
   });
 
-  if (is.dev && process.env.ELECTRON_RENDERER_URL) {
-    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
-  } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
-  }
-
+  loadRendererWindow(mainWindow);
   return mainWindow;
 }
 
-function createTray() {
-  const trayIcon = icon // 你已经有 icon 资源 👍
+function createPomodoroWindow(): BrowserWindow {
+  if (pomodoroWindow && !pomodoroWindow.isDestroyed()) {
+    if (pomodoroWindow.isMinimized()) {
+      pomodoroWindow.restore();
+    }
 
-  tray = new Tray(trayIcon)
+    pomodoroWindow.show();
+    pomodoroWindow.focus();
+    return pomodoroWindow;
+  }
+
+  pomodoroWindow = new BrowserWindow({
+    width: 460,
+    height: 640,
+    minWidth: 360,
+    minHeight: 520,
+    show: false,
+    title: '番茄钟',
+    autoHideMenuBar: true,
+    resizable: true,
+    ...(process.platform === 'linux' ? { icon } : {}),
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false
+    }
+  });
+
+  pomodoroWindow.on('ready-to-show', () => {
+    pomodoroWindow?.show();
+  });
+
+  pomodoroWindow.on('closed', () => {
+    pomodoroWindow = null;
+  });
+
+  pomodoroWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url);
+    return { action: 'deny' };
+  });
+
+  loadRendererWindow(pomodoroWindow, 'pomodoro');
+  return pomodoroWindow;
+}
+
+function createTray(): void {
+  tray = new Tray(icon);
 
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -46,17 +95,20 @@ function createTray() {
       click: () => windowManager?.showAndFocus()
     },
     {
+      label: '番茄钟',
+      click: () => createPomodoroWindow()
+    },
+    {
       label: '退出',
       click: () => app.quit()
     }
-  ])
+  ]);
 
-  tray.setToolTip('TODO Reminder')
-  tray.setContextMenu(contextMenu)
-
+  tray.setToolTip('TODO Reminder');
+  tray.setContextMenu(contextMenu);
   tray.on('click', () => {
-    windowManager?.showAndFocus()
-  })
+    windowManager?.showAndFocus();
+  });
 }
 
 app.whenReady().then(() => {
@@ -70,7 +122,9 @@ app.whenReady().then(() => {
   repository = new TodoRepository(dbPath);
   windowManager = new WindowManager(join(__dirname, '../preload/index.js'), icon);
 
-  registerIpcHandlers(repository, windowManager);
+  registerIpcHandlers(repository, windowManager, {
+    openPomodoroWindow: createPomodoroWindow
+  });
 
   scheduler = new ReminderScheduler(repository, () => {
     windowManager?.showAndFocus();
@@ -80,10 +134,11 @@ app.whenReady().then(() => {
   createMainWindow();
   createTray();
 
-  globalShortcut.register('CommandOrControl+Shift+X', () => {
+  globalShortcut.register('Alt+X', () => {
     if (!windowManager) {
       return;
     }
+
     const next = !windowManager.getClickThrough();
     windowManager.setClickThrough(next);
   });

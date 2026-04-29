@@ -21,7 +21,12 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/x-date-pickers": "^9.0.4",
     "better-sqlite3": "^12.8.0",
+    "dayjs": "^1.11.20",
     "electron-updater": "^6.3.9"
   },
   "devDependencies": {

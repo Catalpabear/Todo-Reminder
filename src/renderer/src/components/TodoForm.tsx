@@ -1,6 +1,8 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 
+import type { JSX } from 'react';
+
 import type { Todo } from '../../../shared/todo';
 
 type TodoFormProps = {

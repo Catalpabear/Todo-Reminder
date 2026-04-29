@@ -1,10 +1,19 @@
-﻿import { ipcMain } from 'electron';
+import { Notification, app, ipcMain } from 'electron';
 
+import type { PomodoroNotificationInput } from '../../shared/ipc';
 import type { TodoInput, TodoUpdateInput, WindowMode } from '../../shared/todo';
 import { TodoRepository } from '../database/todoRepository';
 import { WindowManager } from '../window/windowManager';
 
-export function registerIpcHandlers(repository: TodoRepository, windowManager: WindowManager): void {
+type IpcActions = {
+  openPomodoroWindow: () => void;
+};
+
+export function registerIpcHandlers(
+  repository: TodoRepository,
+  windowManager: WindowManager,
+  actions: IpcActions
+): void {
   const register = <T>(
     channel: string,
     handler: (event: Electron.IpcMainInvokeEvent, payload: T) => unknown
@@ -24,6 +33,28 @@ export function registerIpcHandlers(repository: TodoRepository, windowManager: W
 
   register<boolean>('setClickThrough', (_, enabled) => windowManager.setClickThrough(enabled));
   register<void>('getClickThrough', () => windowManager.getClickThrough());
+
+  register<boolean>('setAutoLaunch', (_, enabled) => {
+    app.setLoginItemSettings({ openAtLogin: enabled });
+    return app.getLoginItemSettings().openAtLogin;
+  });
+  register<void>('getAutoLaunch', () => app.getLoginItemSettings().openAtLogin);
+
+  register<void>('openPomodoroWindow', () => {
+    actions.openPomodoroWindow();
+  });
+
+  register<PomodoroNotificationInput>('notifyPomodoroDone', (_, payload) => {
+    if (!Notification.isSupported()) {
+      return;
+    }
+
+    const label = payload.presetName ? `「${payload.presetName}」` : `${payload.durationMinutes} 分钟`;
+    new Notification({
+      title: '番茄钟时间到',
+      body: `${label} 已完成，休息一下吧。`
+    }).show();
+  });
 
   register<void>('minimizeWindow', () => {
     windowManager.minimize();

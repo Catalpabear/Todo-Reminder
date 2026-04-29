@@ -1,4 +1,6 @@
-﻿import type { Todo } from '../../../shared/todo';
+import type { JSX } from 'react';
+
+import type { Todo } from '../../../shared/todo';
 
 type TodoItemProps = {
   todo: Todo;
