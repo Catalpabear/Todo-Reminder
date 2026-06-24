@@ -234,7 +234,7 @@ export default function App(): JSX.Element {
         </section>
 
         <details ref={detailsRef}>
-          <summary>点击展开</summary>
+          <summary>点击展开新建TODO界面</summary>
           <section className="panel no-drag">
             <h2>{editing ? '编辑 TODO' : '新建 TODO'}</h2>
             <TodoForm

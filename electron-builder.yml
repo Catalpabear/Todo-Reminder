@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: electron-app
+appId: com.todo.reminder.desktop
+productName: Todo-Reminder
 directories:
   buildResources: build
 files:
@@ -11,14 +11,21 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: electron-app
+  executableName: Todo-Reminder
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  createStartMenuShortcut: true
+  menuCategory: Todo-Reminder
   oneClick: false
+  perMachine: false
   allowToChangeInstallationDirectory: true
+  allowElevation: true
+  deleteAppDataOnUninstall: false
+  installerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
