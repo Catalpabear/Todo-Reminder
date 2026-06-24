@@ -1,162 +1,182 @@
-﻿import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 
-import type { JSX } from 'react';
+import type { JSX } from 'react'
 
-import type { Todo, WindowMode } from '../../shared/todo';
+import type { AppSettings } from '../../shared/settings'
+import { DEFAULT_SETTINGS } from '../../shared/settings'
+import type { Todo, WindowMode } from '../../shared/todo'
 
-import TodoForm, { mapTodoToInitialForm } from './components/TodoForm';
-import TodoItem from './components/TodoItem';
+import TodoForm, { mapTodoToInitialForm } from './components/TodoForm'
+import TodoItem from './components/TodoItem'
 
 type FormPayload = {
-  title: string;
-  description: string;
-  deadline: number;
-};
+  title: string
+  description: string
+  deadline: number
+}
 
 const defaultForm = {
   title: '',
   description: '',
   deadline: ''
-};
+}
+
+function toLocalDateTimeInputValue(timestamp: number): string {
+  const target = new Date(timestamp)
+  const shifted = new Date(target.getTime() - target.getTimezoneOffset() * 60 * 1000)
+  return shifted.toISOString().slice(0, 16)
+}
+
+function computeAutoFillDeadline(autoFillHours: number | null): string {
+  if (!autoFillHours || autoFillHours <= 0) {
+    return ''
+  }
+
+  return toLocalDateTimeInputValue(Date.now() + autoFillHours * 60 * 60 * 1000)
+}
 
 export default function App(): JSX.Element {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
-  const [editingForm, setEditingForm] = useState(defaultForm);
-  const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<WindowMode>('forever');
-  const [clickThrough, setClickThrough] = useState(false);
-  const [autoLaunch, setAutoLaunch] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [editingTodoId, setEditingTodoId] = useState<number | null>(null)
+  const [editingForm, setEditingForm] = useState(defaultForm)
+  const [loading, setLoading] = useState(false)
+  const [mode, setMode] = useState<WindowMode>('forever')
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
+  const [error, setError] = useState<string | null>(null)
 
   const loadTodos = useCallback(async (): Promise<void> => {
     try {
-      const list = await window.api.getTodos();
-      setTodos(list);
+      const list = await window.api.getTodos()
+      setTodos(list)
     } catch {
-      setError('读取 TODO 失败，请重试。');
+      setError('读取 TODO 失败，请重试。')
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    void loadTodos();
+    void loadTodos()
 
-    void window.api.getWindowMode().then(setMode);
-    void window.api.getClickThrough().then(setClickThrough);
-    void window.api.getAutoLaunch().then(setAutoLaunch);
+    void window.api.getWindowMode().then(setMode)
+    void window.api.getSettings().then(setSettings)
 
     const unsubscribeWindowMode = window.api.onWindowModeChanged((nextMode) => {
-      setMode(nextMode);
-    });
-    const unsubscribeClickThrough = window.api.onClickThroughChanged((enabled) => {
-      setClickThrough(enabled);
-    });
+      setMode(nextMode)
+    })
+
+    const unsubscribeSettings = window.api.onSettingsChanged((nextSettings) => {
+      setSettings(nextSettings)
+    })
 
     return () => {
-      unsubscribeWindowMode();
-      unsubscribeClickThrough();
-    };
-  }, [loadTodos]);
+      unsubscribeWindowMode()
+      unsubscribeSettings()
+    }
+  }, [loadTodos])
 
   const handleCreate = async (payload: FormPayload): Promise<void> => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
 
     try {
-      await window.api.createTodo(payload);
-      await loadTodos();
+      await window.api.createTodo(payload)
+      await loadTodos()
     } catch {
-      setError('创建 TODO 失败，请重试。');
+      setError('创建 TODO 失败，请重试。')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleUpdate = async (payload: FormPayload): Promise<void> => {
     if (editingTodoId === null) {
-      return;
+      return
     }
 
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
 
     try {
-      await window.api.updateTodo({ id: editingTodoId, ...payload });
-      setEditingTodoId(null);
-      setEditingForm(defaultForm);
-      await loadTodos();
+      await window.api.updateTodo({ id: editingTodoId, ...payload })
+      setEditingTodoId(null)
+      setEditingForm(defaultForm)
+      await loadTodos()
     } catch {
-      setError('更新 TODO 失败，请重试。');
+      setError('更新 TODO 失败，请重试。')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleDelete = async (id: number): Promise<void> => {
-    setError(null);
+    setError(null)
 
     try {
-      await window.api.deleteTodo(id);
+      await window.api.deleteTodo(id)
       if (editingTodoId === id) {
-        setEditingTodoId(null);
-        setEditingForm(defaultForm);
+        setEditingTodoId(null)
+        setEditingForm(defaultForm)
       }
-      await loadTodos();
+      await loadTodos()
     } catch {
-      setError('删除 TODO 失败。');
+      setError('删除 TODO 失败。')
     }
-  };
+  }
 
   const handleMarkNotified = async (id: number): Promise<void> => {
-    setError(null);
+    setError(null)
 
     try {
-      await window.api.markNotified(id);
-      await loadTodos();
+      await window.api.markNotified(id)
+      await loadTodos()
     } catch {
-      setError('更新提醒状态失败。');
+      setError('更新提醒状态失败。')
     }
-  };
+  }
 
   const handleEdit = (todo: Todo): void => {
-    setEditingTodoId(todo.id);
-    setEditingForm(mapTodoToInitialForm(todo));
-    open();
-    handleScrollToTarget();
-  };
+    setEditingTodoId(todo.id)
+    setEditingForm(mapTodoToInitialForm(todo))
+    open()
+    handleScrollToTarget()
+  }
 
   const cancelEdit = (): void => {
-    setEditingTodoId(null);
-    setEditingForm(defaultForm);
-    close();
-  };
+    setEditingTodoId(null)
+    setEditingForm(defaultForm)
+    close()
+  }
 
   const switchMode = async (nextMode: WindowMode): Promise<void> => {
-    const result = await window.api.setWindowMode(nextMode);
-    setMode(result);
-  };
-
-  const toggleClickThrough = async (allowInteraction: boolean): Promise<void> => {
-    const result = await window.api.setClickThrough(!allowInteraction);
-    setClickThrough(result);
-  };
-
-  const toggleAutoLaunch = async (enabled: boolean): Promise<void> => {
-    const result = await window.api.setAutoLaunch(enabled);
-    setAutoLaunch(result);
-  };
+    const result = await window.api.setWindowMode(nextMode)
+    setMode(result)
+  }
 
   const editing = useMemo(
-    () => (editingTodoId === null ? null : todos.find((todo) => todo.id === editingTodoId) ?? null),
+    () =>
+      editingTodoId === null ? null : (todos.find((todo) => todo.id === editingTodoId) ?? null),
     [editingTodoId, todos]
-  );
+  )
 
-  const detailsRef = useRef<HTMLDetailsElement>(null);
-  const open = () => { if (detailsRef.current) { detailsRef.current.open = true } }
-  const close = () => { if (detailsRef.current) { detailsRef.current.open = false } }
+  const detailsRef = useRef<HTMLDetailsElement>(null)
+  const open = () => {
+    if (detailsRef.current) {
+      detailsRef.current.open = true
+    }
+  }
+  const close = () => {
+    if (detailsRef.current) {
+      detailsRef.current.open = false
+    }
+  }
   const handleScrollToTarget = () => {
-    detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+    detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const autoFillDeadline = useMemo(
+    () => computeAutoFillDeadline(settings.autoFillDeadlineHours),
+    [settings.autoFillDeadlineHours]
+  )
+
   return (
     <div className="window-root">
       <div className="app-shell">
@@ -166,12 +186,6 @@ export default function App(): JSX.Element {
             <h1>任务提醒</h1>
           </div>
           <div className="window-buttons no-drag">
-            {/* <button type="button" className="ghost" onClick={() => window.api.minimizeWindow()}>
-              最小化
-            </button>
-            <button type="button" className="danger" onClick={() => window.api.closeWindow()}>
-              关闭
-            </button> */}
             <div className="mode-switch">
               <button
                 type="button"
@@ -190,44 +204,28 @@ export default function App(): JSX.Element {
             </div>
           </div>
         </header>
+
         <section className="toolbar no-drag">
-          {/* <div className="mode-switch">
-            <button
-              type="button"
-              className={mode === 'forever' ? 'active' : ''}
-              onClick={() => void switchMode('forever')}
-            >
-              Forever Mode
-            </button>
-            <button
-              type="button"
-              className={mode === 'desktop' ? 'active' : ''}
-              onClick={() => void switchMode('desktop')}
-            >
-              Desktop Mode
-            </button>
-          </div> */}
           <div className="toolbar-actions">
-            <label className="click-toggle">
-              <input
-                type="checkbox"
-                checked={!clickThrough}
-                onChange={(event) => void toggleClickThrough(event.target.checked)}
-              />
-              允许点击窗口
-            </label>
-            <label className="click-toggle">
-              <input
-                type="checkbox"
-                checked={autoLaunch}
-                onChange={(event) => void toggleAutoLaunch(event.target.checked)}
-              />
-              开启开机自启动
-            </label>
-            <button type="button" className="ghost toolbar-button" onClick={() => window.api.openPomodoroWindow()}>
+            <button
+              type="button"
+              className="ghost toolbar-button"
+              onClick={() => window.api.openPomodoroWindow()}
+            >
               番茄钟
             </button>
-            <button type="button" className="danger toolbar-button" onClick={() => window.api.closeWindow()}>
+            <button
+              type="button"
+              className="ghost toolbar-button"
+              onClick={() => window.api.openSettingsWindow()}
+            >
+              设置
+            </button>
+            <button
+              type="button"
+              className="danger toolbar-button"
+              onClick={() => window.api.closeWindow()}
+            >
               Exit
             </button>
           </div>
@@ -241,7 +239,7 @@ export default function App(): JSX.Element {
               submitLabel={editing ? '保存修改' : '创建任务'}
               initialTitle={editing ? editingForm.title : ''}
               initialDescription={editing ? editingForm.description : ''}
-              initialDeadline={editing ? editingForm.deadline : ''}
+              initialDeadline={editing ? editingForm.deadline : autoFillDeadline}
               onSubmit={editing ? handleUpdate : handleCreate}
               onCancelEdit={editing ? cancelEdit : undefined}
               loading={loading}
@@ -271,12 +269,7 @@ export default function App(): JSX.Element {
             {todos.length === 0 ? <p className="empty-tip">暂无任务，创建一个吧。</p> : null}
           </div>
         </section>
-
-        {/* <footer className="footer no-drag">
-          <span>通知规则：截止前 5 小时触发（每分钟检查）</span>
-          <span>快捷键：Ctrl/Cmd + Shift + X 切换穿透</span>
-        </footer> */}
       </div>
     </div>
-  );
+  )
 }

@@ -1,116 +1,116 @@
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { TimeClock } from '@mui/x-date-pickers/TimeClock';
-import dayjs, { Dayjs } from 'dayjs';
-import { useEffect, useMemo, useState } from 'react';
-import type { JSX } from 'react';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { TimeClock } from '@mui/x-date-pickers/TimeClock'
+import dayjs, { Dayjs } from 'dayjs'
+import { useEffect, useMemo, useState } from 'react'
+import type { JSX } from 'react'
 
 type PomodoroPreset = {
-  id: string;
-  name: string;
-  minutes: number;
-};
+  id: string
+  name: string
+  minutes: number
+}
 
-const PRESETS_KEY = 'pomodoro-presets';
-const DEFAULT_MINUTES = 60;
+const PRESETS_KEY = 'pomodoro-presets'
+const DEFAULT_MINUTES = 60
 
 function readPresets(): PomodoroPreset[] {
   try {
-    const raw = localStorage.getItem(PRESETS_KEY);
+    const raw = localStorage.getItem(PRESETS_KEY)
     if (!raw) {
-      return [];
+      return []
     }
 
-    const parsed = JSON.parse(raw) as PomodoroPreset[];
-    return parsed.filter((preset) => preset.name && preset.minutes > 0);
+    const parsed = JSON.parse(raw) as PomodoroPreset[]
+    return parsed.filter((preset) => preset.name && preset.minutes > 0)
   } catch {
-    return [];
+    return []
   }
 }
 
 function formatRemaining(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
 
-  return [hours, minutes, seconds].map((value) => value.toString().padStart(2, '0')).join(':');
+  return [hours, minutes, seconds].map((value) => value.toString().padStart(2, '0')).join(':')
 }
 
 function minutesToClockValue(minutes: number): Dayjs {
   return dayjs()
     .hour(Math.floor(minutes / 60))
     .minute(minutes % 60)
-    .second(0);
+    .second(0)
 }
 
 function clockValueToMinutes(value: Dayjs | null): number {
   if (!value) {
-    return DEFAULT_MINUTES;
+    return DEFAULT_MINUTES
   }
 
-  return Math.max(1, value.hour() * 60 + value.minute());
+  return Math.max(1, value.hour() * 60 + value.minute())
 }
 
 export default function PomodoroWindow(): JSX.Element {
-  const [durationMinutes, setDurationMinutes] = useState(DEFAULT_MINUTES);
-  const [remainingSeconds, setRemainingSeconds] = useState(DEFAULT_MINUTES * 60);
-  const [running, setRunning] = useState(false);
-  const [presets, setPresets] = useState<PomodoroPreset[]>(() => readPresets());
-  const [presetName, setPresetName] = useState('');
-  const [activePresetName, setActivePresetName] = useState<string | undefined>();
+  const [durationMinutes, setDurationMinutes] = useState(DEFAULT_MINUTES)
+  const [remainingSeconds, setRemainingSeconds] = useState(DEFAULT_MINUTES * 60)
+  const [running, setRunning] = useState(false)
+  const [presets, setPresets] = useState<PomodoroPreset[]>(() => readPresets())
+  const [presetName, setPresetName] = useState('')
+  const [activePresetName, setActivePresetName] = useState<string | undefined>()
 
-  const clockValue = useMemo(() => minutesToClockValue(durationMinutes), [durationMinutes]);
-  const progress = 1 - remainingSeconds / Math.max(1, durationMinutes * 60);
+  const clockValue = useMemo(() => minutesToClockValue(durationMinutes), [durationMinutes])
+  const progress = 1 - remainingSeconds / Math.max(1, durationMinutes * 60)
 
   useEffect(() => {
     if (!running) {
-      setRemainingSeconds(durationMinutes * 60);
+      setRemainingSeconds(durationMinutes * 60)
     }
-  }, [durationMinutes, running]);
+  }, [durationMinutes, running])
 
   useEffect(() => {
-    localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
-  }, [presets]);
+    localStorage.setItem(PRESETS_KEY, JSON.stringify(presets))
+  }, [presets])
 
   useEffect(() => {
     if (!running) {
-      return undefined;
+      return undefined
     }
 
     const timer = window.setInterval(() => {
       setRemainingSeconds((current) => {
         if (current <= 1) {
-          window.clearInterval(timer);
-          setRunning(false);
+          window.clearInterval(timer)
+          setRunning(false)
           void window.api.notifyPomodoroDone({
             durationMinutes,
             presetName: activePresetName
-          });
-          return 0;
+          })
+          return 0
         }
 
-        return current - 1;
-      });
-    }, 1000);
+        return current - 1
+      })
+    }, 1000)
 
     return () => {
-      window.clearInterval(timer);
-    };
-  }, [activePresetName, durationMinutes, running]);
+      window.clearInterval(timer)
+    }
+  }, [activePresetName, durationMinutes, running])
 
   const handleClockChange = (value: Dayjs | null): void => {
     if (running) {
-      return;
+      return
     }
 
-    setActivePresetName(undefined);
-    setDurationMinutes(clockValueToMinutes(value));
-  };
+    setActivePresetName(undefined)
+    setDurationMinutes(clockValueToMinutes(value))
+  }
 
   const handlePresetSave = (): void => {
-    const trimmedName = presetName.trim();
+    const trimmedName = presetName.trim()
     if (!trimmedName) {
-      return;
+      return
     }
 
     setPresets((current) => [
@@ -120,29 +120,28 @@ export default function PomodoroWindow(): JSX.Element {
         name: trimmedName,
         minutes: durationMinutes
       }
-    ]);
-    setPresetName('');
-  };
+    ])
+    setPresetName('')
+  }
 
   const handlePresetSelect = (preset: PomodoroPreset): void => {
     if (running) {
-      return;
+      return
     }
 
-    setDurationMinutes(preset.minutes);
-    setRemainingSeconds(preset.minutes * 60);
-    setActivePresetName(preset.name);
-  };
+    setDurationMinutes(preset.minutes)
+    setRemainingSeconds(preset.minutes * 60)
+    setActivePresetName(preset.name)
+  }
 
   const handleReset = (): void => {
-    setRunning(false);
-    setRemainingSeconds(durationMinutes * 60);
-  };
+    setRunning(false)
+    setRemainingSeconds(durationMinutes * 60)
+  }
 
   return (
     <div className="pomodoro-root drag-region">
       <main className="pomodoro-shell">
-
         <section className="pomodoro-clock-card no-drag">
           <div className="pomodoro-time">{formatRemaining(remainingSeconds)}</div>
           <div className="pomodoro-progress" aria-hidden="true">
@@ -190,7 +189,9 @@ export default function PomodoroWindow(): JSX.Element {
                 <button
                   type="button"
                   className="danger preset-delete"
-                  onClick={() => setPresets((current) => current.filter((item) => item.id !== preset.id))}
+                  onClick={() =>
+                    setPresets((current) => current.filter((item) => item.id !== preset.id))
+                  }
                 >
                   删除
                 </button>
@@ -201,5 +202,5 @@ export default function PomodoroWindow(): JSX.Element {
         </details>
       </main>
     </div>
-  );
+  )
 }

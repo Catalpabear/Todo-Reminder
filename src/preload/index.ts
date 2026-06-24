@@ -1,7 +1,8 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron'
 
-import type { DesktopApi, PomodoroNotificationInput } from '../shared/ipc';
-import type { TodoInput, TodoUpdateInput, WindowMode } from '../shared/todo';
+import type { AppSettings } from '../shared/settings'
+import type { DesktopApi, PomodoroNotificationInput } from '../shared/ipc'
+import type { TodoInput, TodoUpdateInput, WindowMode } from '../shared/todo'
 
 const api: DesktopApi = {
   createTodo: (input: TodoInput) => ipcRenderer.invoke('createTodo', input),
@@ -22,36 +23,53 @@ const api: DesktopApi = {
 
   getAutoLaunch: () => ipcRenderer.invoke('getAutoLaunch'),
   setAutoLaunch: (enabled: boolean) => ipcRenderer.invoke('setAutoLaunch', enabled),
-  notifyPomodoroDone: (input: PomodoroNotificationInput) => ipcRenderer.invoke('notifyPomodoroDone', input),
+  notifyPomodoroDone: (input: PomodoroNotificationInput) =>
+    ipcRenderer.invoke('notifyPomodoroDone', input),
+
+  getSettings: () => ipcRenderer.invoke('getSettings'),
+  updateSettings: (partial: Partial<AppSettings>) => ipcRenderer.invoke('updateSettings', partial),
+  openSettingsWindow: () => ipcRenderer.invoke('openSettingsWindow'),
 
   onWindowModeChanged: (callback: (mode: WindowMode) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, mode: WindowMode): void => {
-      callback(mode);
-    };
+      callback(mode)
+    }
 
-    ipcRenderer.on('windowModeChanged', listener);
+    ipcRenderer.on('windowModeChanged', listener)
 
     return () => {
-      ipcRenderer.removeListener('windowModeChanged', listener);
-    };
+      ipcRenderer.removeListener('windowModeChanged', listener)
+    }
   },
 
   onClickThroughChanged: (callback: (enabled: boolean) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, enabled: boolean): void => {
-      callback(enabled);
-    };
+      callback(enabled)
+    }
 
-    ipcRenderer.on('clickThroughChanged', listener);
+    ipcRenderer.on('clickThroughChanged', listener)
 
     return () => {
-      ipcRenderer.removeListener('clickThroughChanged', listener);
-    };
+      ipcRenderer.removeListener('clickThroughChanged', listener)
+    }
+  },
+
+  onSettingsChanged: (callback: (settings: AppSettings) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, settings: AppSettings): void => {
+      callback(settings)
+    }
+
+    ipcRenderer.on('settingsChanged', listener)
+
+    return () => {
+      ipcRenderer.removeListener('settingsChanged', listener)
+    }
   }
-};
+}
 
 if (process.contextIsolated) {
-  contextBridge.exposeInMainWorld('api', api);
+  contextBridge.exposeInMainWorld('api', api)
 } else {
   // @ts-ignore runtime fallback for contextIsolation disabled.
-  window.api = api;
+  window.api = api
 }

@@ -1,20 +1,27 @@
-import type { JSX } from 'react';
+import type { JSX } from 'react'
 
-import type { Todo } from '../../../shared/todo';
+import type { Todo } from '../../../shared/todo'
 
 type TodoItemProps = {
-  todo: Todo;
-  onEdit: (todo: Todo) => void;
-  onDelete: (id: number) => Promise<void>;
-  onMarkNotified: (id: number) => Promise<void>;
-};
+  todo: Todo
+  onEdit: (todo: Todo) => void
+  onDelete: (id: number) => Promise<void>
+  onMarkNotified: (id: number) => Promise<void>
+}
 
-export default function TodoItem({ todo, onEdit, onDelete, onMarkNotified }: TodoItemProps): JSX.Element {
+export default function TodoItem({
+  todo,
+  onEdit,
+  onDelete,
+  onMarkNotified
+}: TodoItemProps): JSX.Element {
   return (
     <article className="todo-card">
       <div className="todo-card-header">
         <h3>{todo.title}</h3>
-        <span className={todo.notified ? 'badge badge-ok' : 'badge'}>{todo.notified ? '已提醒' : '未提醒'}</span>
+        <span className={todo.notified ? 'badge badge-ok' : 'badge'}>
+          {todo.notified ? '已提醒' : '未提醒'}
+        </span>
       </div>
 
       <p className="todo-deadline">截止：{new Date(todo.deadline).toLocaleString()}</p>
@@ -34,5 +41,5 @@ export default function TodoItem({ todo, onEdit, onDelete, onMarkNotified }: Tod
         ) : null}
       </div>
     </article>
-  );
+  )
 }

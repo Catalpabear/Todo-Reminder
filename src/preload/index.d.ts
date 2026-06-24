@@ -1,9 +1,9 @@
-﻿import type { DesktopApi } from '../shared/ipc';
+﻿import type { DesktopApi } from '../shared/ipc'
 
 declare global {
   interface Window {
-    api: DesktopApi;
+    api: DesktopApi
   }
 }
 
-export {};
+export {}

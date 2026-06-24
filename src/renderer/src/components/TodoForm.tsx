@@ -1,29 +1,29 @@
-﻿import { useEffect, useMemo, useState } from 'react';
-import type { FormEvent } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react'
+import type { FormEvent } from 'react'
 
-import type { JSX } from 'react';
+import type { JSX } from 'react'
 
-import type { Todo } from '../../../shared/todo';
+import type { Todo } from '../../../shared/todo'
 
 type TodoFormProps = {
-  submitLabel: string;
-  initialTitle: string;
-  initialDescription: string;
-  initialDeadline: string;
-  onSubmit: (payload: { title: string; description: string; deadline: number }) => Promise<void>;
-  onCancelEdit?: () => void;
-  loading?: boolean;
-  close: () => void;
-};
+  submitLabel: string
+  initialTitle: string
+  initialDescription: string
+  initialDeadline: string
+  onSubmit: (payload: { title: string; description: string; deadline: number }) => Promise<void>
+  onCancelEdit?: () => void
+  loading?: boolean
+  close: () => void
+}
 
 function parseDeadline(input: string): number {
-  return new Date(input).getTime();
+  return new Date(input).getTime()
 }
 
 function toLocalDateTimeInputValue(timestamp: number): string {
-  const target = new Date(timestamp);
-  const shifted = new Date(target.getTime() - target.getTimezoneOffset() * 60 * 1000);
-  return shifted.toISOString().slice(0, 16);
+  const target = new Date(timestamp)
+  const shifted = new Date(target.getTime() - target.getTimezoneOffset() * 60 * 1000)
+  return shifted.toISOString().slice(0, 16)
 }
 
 export default function TodoForm({
@@ -36,79 +36,79 @@ export default function TodoForm({
   loading,
   close
 }: TodoFormProps): JSX.Element {
-  const [title, setTitle] = useState(initialTitle);
-  const [description, setDescription] = useState(initialDescription);
-  const [deadline, setDeadline] = useState(initialDeadline);
-  const [error, setError] = useState<string | null>(null);
-  const minDeadline = useMemo(() => toLocalDateTimeInputValue(Date.now() + 1 * 60 * 60 * 1000), []);
-  const parsedDeadline = useMemo(() => parseDeadline(deadline), [deadline]);
+  const [title, setTitle] = useState(initialTitle)
+  const [description, setDescription] = useState(initialDescription)
+  const [deadline, setDeadline] = useState(initialDeadline)
+  const [error, setError] = useState<string | null>(null)
+  const minDeadline = useMemo(() => toLocalDateTimeInputValue(Date.now() + 1 * 60 * 60 * 1000), [])
+  const parsedDeadline = useMemo(() => parseDeadline(deadline), [deadline])
 
   useEffect(() => {
-    setTitle(initialTitle);
-    setDescription(initialDescription);
-    setDeadline(minDeadline);
-    setError(null);
-  }, [initialTitle, initialDescription, initialDeadline]);
+    setTitle(initialTitle)
+    setDescription(initialDescription)
+    setDeadline(initialDeadline || minDeadline)
+    setError(null)
+  }, [initialTitle, initialDescription, initialDeadline, minDeadline])
 
   useEffect(() => {
     if (!deadline) {
-      setError(null);
-      return;
+      setError(null)
+      return
     }
 
     if (Number.isNaN(parsedDeadline)) {
-      setError('请输入有效的截止时间');
-      return;
+      setError('请输入有效的截止时间')
+      return
     }
 
     if (parsedDeadline < Date.now()) {
-      setError('计划日期不能早于当前时间');
-      return;
+      setError('计划日期不能早于当前时间')
+      return
     }
 
-    setError(null);
-  }, [deadline, parsedDeadline]);
+    setError(null)
+  }, [deadline, parsedDeadline])
 
   const isDisabled = useMemo(() => {
     if (loading || !title.trim() || !deadline) {
-      return true;
+      return true
     }
 
     if (Number.isNaN(parsedDeadline)) {
-      return true;
+      return true
     }
 
-    return parsedDeadline < Date.now();
-  }, [loading, title, deadline, parsedDeadline]);
+    return parsedDeadline < Date.now()
+  }, [loading, title, deadline, parsedDeadline])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
-    const timestamp = parseDeadline(deadline);
+    event.preventDefault()
+    const timestamp = parseDeadline(deadline)
 
     if (Number.isNaN(timestamp)) {
-      setError('请输入有效的截止时间');
-      return;
+      setError('请输入有效的截止时间')
+      return
     }
 
     if (timestamp < Date.now()) {
-      setError('计划日期不能早于当前时间');
-      return;
+      setError('计划日期不能早于当前时间')
+      return
     }
 
-    setError(null);
+    setError(null)
     await onSubmit({
       title: title.trim(),
       description: description.trim(),
       deadline: timestamp
-    });
+    })
 
     if (!onCancelEdit) {
-      setTitle('');
-      setDescription('');
-      setDeadline('');
+      setTitle('')
+      setDescription('')
+      setDeadline('')
     }
-    close();
-  };
+    close()
+  }
 
   return (
     <form className="todo-form" onSubmit={handleSubmit}>
@@ -159,20 +159,20 @@ export default function TodoForm({
         ) : null}
       </div>
     </form>
-  );
+  )
 }
 
 export function mapTodoToInitialForm(todo: Todo): {
-  title: string;
-  description: string;
-  deadline: string;
+  title: string
+  description: string
+  deadline: string
 } {
-  const targetDate = new Date(todo.deadline);
-  const shifted = new Date(todo.deadline - targetDate.getTimezoneOffset() * 60 * 1000);
+  const targetDate = new Date(todo.deadline)
+  const shifted = new Date(todo.deadline - targetDate.getTimezoneOffset() * 60 * 1000)
 
   return {
     title: todo.title,
     description: todo.description,
     deadline: shifted.toISOString().slice(0, 16)
-  };
+  }
 }
